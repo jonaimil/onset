@@ -1,62 +1,66 @@
 # Architecture
 
-## Overview
-Multi-workflow app. Currently: Workflow 1 (LoRA face trainer). Future: image generation workflows consuming trained LoRAs as "profiles."
-
 ## Stack
-- Next.js 15 (App Router, TypeScript, src/)
-- Tailwind CSS v4 + shadcn/ui (new-york, dark mode)
-- Zustand (wizard: no persist, profiles: localStorage persist)
-- fal.ai (@fal-ai/client + @fal-ai/server-proxy)
-- JSZip (server-side ZIP creation)
-- Canvas API (client-side grid cropping)
+- Next.js 15, App Router, TypeScript, `src/` directory
+- Tailwind CSS v4 + shadcn/ui (new-york style, dark mode always)
+- Font: Roboto Mono (monospace throughout)
+- Accent: Lime `oklch(0.82 0.19 130)` — user-configurable via `--accent-hue` / `--accent-chroma` CSS vars
+- Zustand for state (wizard: session-scoped, profiles: localStorage-persisted)
+- fal.ai: `@fal-ai/client` + `@fal-ai/server-proxy`
+- Remotion: `@remotion/player` for GridLoader animations
+- JSZip for training dataset bundling
+
+## Directory Structure
+```
+src/
+├── app/
+│   ├── layout.tsx          # Root layout (dark, Roboto Mono, FalConfigProvider, AppNav)
+│   ├── page.tsx            # Redirects to /train
+│   ├── globals.css         # Tailwind v4, CSS vars, dark theme, shimmer-sweep keyframe
+│   ├── train/              # LoRA trainer wizard
+│   ├── profiles/           # Saved LoRA profiles
+│   └── api/
+│       ├── fal/proxy/      # fal.ai server proxy (when no user API key)
+│       ├── fal/status/     # Returns { hasServerKey: boolean }
+│       └── train/          # ZIP creation + LoRA training submission
+├── components/
+│   ├── face-trainer/       # Wizard components (GenerationRound, ImageGrid, FinalReview, etc.)
+│   ├── layout/             # AppNav
+│   ├── providers/          # FalConfigProvider
+│   ├── settings/           # ApiKeyPrompt
+│   └── ui/                 # shadcn primitives + GridLoader Remotion components
+├── store/
+│   ├── trainer-store.ts    # Wizard state (session-scoped, no persist)
+│   ├── profile-store.ts    # Saved profiles (localStorage persist)
+│   ├── api-key-store.ts    # User API key (localStorage persist)
+│   └── accent-store.ts     # Accent color customization (localStorage persist)
+├── lib/
+│   ├── color.ts            # Accent color utilities
+│   ├── fal.ts              # fal.ai client helpers
+│   ├── grid-cropper.ts     # Canvas API grid cropping
+│   ├── mock-data.ts        # Mock mode seed data
+│   └── utils.ts            # cn() and general utils
+└── types/
+    └── index.ts            # All types + ROUND_CONFIGS constant
+```
 
 ## Key Patterns
-- **Dual auth**: User API key (localStorage) takes priority. Falls back to server-side `FAL_KEY` via proxy. Wizard gated until one is available.
-- **Proxy pattern**: `/api/fal/proxy` — used when no user key, FAL_KEY stays server-side
-- **Client credentials**: When user provides key, `fal.config({ credentials })` bypasses proxy
-- **FalConfigProvider**: Wraps app in layout, syncs `api-key-store` → `fal.config()` via useEffect
-- **Wizard flow**: Single Zustand store drives linear phase progression
-- **Wizard gating**: FaceTrainer checks user key → `/api/fal/status` → ApiKeyPrompt
-- **Elimination model**: All images selected by default, user removes bad ones
-- **Reference accumulation**: Each round adds selected images to next round's references (capped at 14)
-- **Profile persistence**: Completed LoRAs saved to localStorage via Zustand persist
-- **Lazy upload**: `startTraining` uploads any images missing `falUrl` on-demand before training
-- **Mock mode**: `?mock=true` seeds stores with placeholder data, shows phase navigator, no API calls
 
-## Generation Rounds (4 standard, 6 extended — user-selectable)
-1. Expressions (face lock-in)
-2. Angles (3D structure)
-3. Outfits & Lighting (variety — higher drift risk)
-4. Settings & Framing (close-up, upper body, outdoor/indoor, side profile)
-5. Accessories & Styling _(extended)_ — forces model to learn face as invariant
-6. Activities & Natural Poses _(extended)_ — breaks portrait stiffness
+### Auth: Dual API key
+User key (localStorage) OR server-side `FAL_KEY` via proxy. User key takes priority. Training route receives key via `x-fal-key` header.
 
-Resolution (2K/4K) and round count (4/6) are user-configurable on the upload step. Stored in trainer-store, not persisted. All rounds use 1:1 aspect ratio, prompt-based 3x3 grid.
+### Wizard Flow
+Upload → Generating (4 or 6 rounds) → Final Review → Training Config → Training → Complete
 
-## Data Flow
-```
-Upload → fal.storage.upload() → sourceFalUrl
-  ↓
-Round 1-N: NanoBanana(image_urls, prompt, resolution) → grid image → Canvas crop → 9 blobs
-  ↓ (selected images uploaded to fal.storage between rounds)
-Final Review → confirm selections
-  ↓
-Training Config → profile name + trigger word
-  ↓
-startTraining → upload any missing images → POST /api/train
-  ↓
-/api/train: fetch images → JSZip → fal.storage → flux-lora-fast-training
-  ↓
-Completion → save to profile store (localStorage)
-```
+### State Architecture
+- `trainer-store`: Session-scoped, no persistence. Drives the entire wizard flow.
+- `profile-store`: localStorage-persisted. Saved LoRA profiles survive refresh.
+- `api-key-store`: localStorage-persisted. User's fal.ai API key.
+- `accent-store`: localStorage-persisted. Custom accent hue/chroma.
 
-## File Structure
-- `src/app/` — pages + API routes
-- `src/components/face-trainer/` — wizard step components + mock phase nav + how-it-works dialog
-- `src/components/layout/` — nav (includes API key button)
-- `src/components/providers/` — FalConfigProvider (syncs API key to fal client)
-- `src/components/settings/` — ApiKeyDialog, ApiKeyPrompt
-- `src/store/` — Zustand stores (trainer-store, profile-store, api-key-store)
-- `src/lib/` — fal config (+ configureFal), grid cropper, mock data, utils
-- `src/types/` — TypeScript interfaces + round configs
+### Mock Mode
+`?mock=true` query param on `/train` or `/profiles`. Seeds placeholder data, shows phase navigator, no API calls.
+
+## API Models
+- NanoBanana: `fal-ai/nano-banana-pro/edit` (generation, 2K or 4K)
+- LoRA Training: `fal-ai/flux-lora-fast-training` (~$2)

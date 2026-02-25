@@ -2,7 +2,7 @@
 
 import { Palette } from "lucide-react";
 import { useAccentStore } from "@/store/accent-store";
-import { primaryHexForHue, DEFAULT_HUE, PRIMARY_C } from "@/lib/color";
+import { primaryHexForHue, DEFAULT_HUE, PRIMARY_C, SATURATED_C } from "@/lib/color";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -11,16 +11,16 @@ import {
 } from "@/components/ui/popover";
 
 const PRESETS: { label: string; hue: number; chroma?: number }[] = [
-  { label: "Lime", hue: 130 },
-  { label: "Emerald", hue: 155 },
-  { label: "Teal", hue: 180 },
-  { label: "Blue", hue: 250 },
-  { label: "Purple", hue: 290 },
   { label: "White", hue: 0, chroma: 0.01 },
-  { label: "Rose", hue: 10 },
-  { label: "Orange", hue: 55 },
-  { label: "Gold", hue: 85 },
-  { label: "Green", hue: 145 },
+  { label: "Lime", hue: 130, chroma: SATURATED_C },
+  { label: "Emerald", hue: 155, chroma: SATURATED_C },
+  { label: "Teal", hue: 180, chroma: SATURATED_C },
+  { label: "Blue", hue: 250, chroma: SATURATED_C },
+  { label: "Purple", hue: 290, chroma: SATURATED_C },
+  { label: "Rose", hue: 10, chroma: SATURATED_C },
+  { label: "Orange", hue: 55, chroma: SATURATED_C },
+  { label: "Gold", hue: 85, chroma: SATURATED_C },
+  { label: "Green", hue: 145, chroma: SATURATED_C },
 ];
 
 function presetKey(p: { hue: number; chroma?: number }) {
@@ -88,7 +88,7 @@ export function AccentColorPicker() {
               max={360}
               step={1}
               value={hue}
-              onChange={(e) => setAccent(Number(e.target.value))}
+              onChange={(e) => setAccent(Number(e.target.value), SATURATED_C)}
               className="h-2 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white/20"
               style={{
                 background:

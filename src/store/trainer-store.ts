@@ -80,7 +80,7 @@ const initialState = {
   isGenerating: false,
   generationError: null as string | null,
   profileName: "",
-  triggerWord: "TOK",
+  triggerWord: "",
   isTraining: false,
   trainingStatus: "",
   trainingError: null as string | null,
@@ -300,8 +300,7 @@ export const useTrainerStore = create<TrainerState>((set, get) => ({
         headers["x-fal-key"] = userKey;
       }
 
-      // Clear status so typewriter quips take over during the long training wait
-      set({ trainingStatus: "" });
+      set({ trainingStatus: "Submitting training job..." });
 
       const response = await fetch("/api/train", {
         method: "POST",
@@ -314,7 +313,61 @@ export const useTrainerStore = create<TrainerState>((set, get) => ({
         throw new Error(error.error || "Training failed");
       }
 
-      const result: TrainingResult = await response.json();
+      const { requestId } = (await response.json()) as { requestId: string };
+
+      // Poll fal queue client-side (routes through proxy when no user key)
+      // Clear status so typewriter quips take over during the long training wait
+      set({ trainingStatus: "" });
+
+      const pollInterval = 2000;
+      let completed = false;
+
+      while (!completed) {
+        const status = await fal.queue.status(MODELS.LORA_TRAINING, {
+          requestId,
+          logs: true,
+        });
+
+        if (status.status === "IN_QUEUE") {
+          const position = (status as { queue_position?: number }).queue_position;
+          set({
+            trainingStatus: position != null
+              ? `Queue position: ${position}`
+              : "Waiting in queue...",
+          });
+        } else if (status.status === "IN_PROGRESS") {
+          // Clear status — typewriter quips display when trainingStatus is ""
+          set({ trainingStatus: "" });
+        } else if (status.status === "COMPLETED") {
+          completed = true;
+          break;
+        }
+
+        if (!completed) {
+          await new Promise((r) => setTimeout(r, pollInterval));
+        }
+      }
+
+      // Fetch the final result
+      const falResult = await fal.queue.result(MODELS.LORA_TRAINING, {
+        requestId,
+      });
+
+      const data = falResult.data as {
+        diffusers_lora_file?: { url: string };
+        config_file?: { url: string };
+      };
+
+      if (!data.diffusers_lora_file?.url) {
+        throw new Error("Training completed but no LoRA file returned");
+      }
+
+      const result: TrainingResult = {
+        loraUrl: data.diffusers_lora_file.url,
+        configUrl: data.config_file?.url,
+        triggerWord,
+      };
+
       set({
         isTraining: false,
         trainingResult: result,

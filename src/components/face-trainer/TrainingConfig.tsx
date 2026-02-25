@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useTrainerStore } from "@/store/trainer-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,22 @@ export function TrainingConfig() {
   const trainingError = useTrainerStore((s) => s.trainingError);
   const setPhase = useTrainerStore((s) => s.setPhase);
 
+  // Track whether the user has manually edited the trigger word
+  const triggerManuallyEdited = useRef(false);
+
   const selectedCount = getSelectedCount();
+
+  const handleProfileNameChange = (value: string) => {
+    setProfileName(value);
+    if (!triggerManuallyEdited.current) {
+      setTriggerWord(value);
+    }
+  };
+
+  const handleTriggerWordChange = (value: string) => {
+    triggerManuallyEdited.current = true;
+    setTriggerWord(value);
+  };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -43,7 +59,7 @@ export function TrainingConfig() {
               id="profile-name"
               placeholder="e.g., Character A, Warrior Princess"
               value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
+              onChange={(e) => handleProfileNameChange(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
               A name to identify this trained LoRA in your profiles.
@@ -54,14 +70,14 @@ export function TrainingConfig() {
             <Label htmlFor="trigger-word">Trigger Word</Label>
             <Input
               id="trigger-word"
-              placeholder="TOK"
+              placeholder="Same as profile name"
               value={triggerWord}
-              onChange={(e) => setTriggerWord(e.target.value)}
+              onChange={(e) => handleTriggerWordChange(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
               A unique word that activates the LoRA in prompts. Use it like:{" "}
               <code className="rounded bg-muted px-1">
-                a photo of {triggerWord || "TOK"} person on a beach
+                a photo of {triggerWord || "TRIGGER"} person on a beach
               </code>
             </p>
           </div>

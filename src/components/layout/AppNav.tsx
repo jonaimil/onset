@@ -22,7 +22,7 @@ export function AppNav() {
     <nav className="border-b border-border">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4">
         <Link href="/" className="flex items-center">
-          <img src="/onset-logo.svg" alt="Onset" className="h-5" />
+          <img src="/onset-logo.svg" alt="Onset" className="h-5 drop-shadow-[0_0_6px_var(--color-primary)]" />
         </Link>
         <div className="flex gap-4">
           {navItems.map((item) => (

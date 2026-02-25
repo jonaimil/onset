@@ -5,10 +5,67 @@ import { useTrainerStore } from "@/store/trainer-store";
 import { ROUND_CONFIGS } from "@/types";
 import { Button } from "@/components/ui/button";
 import { ImageGrid } from "./ImageGrid";
-import { RoundProgress } from "./RoundProgress";
 import { Loader2, RefreshCw, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { GridLoader2 } from "@/components/ui/grid-loader2";
 import { toast } from "sonner";
+
+const TOTAL_CELLS = 9;
+
+function useProgressiveReveal(active: boolean) {
+  const [revealed, setRevealed] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setRevealed(0);
+      return;
+    }
+    if (revealed >= TOTAL_CELLS) return;
+    const timer = setTimeout(
+      () => setRevealed((prev) => prev + 1),
+      3500 + Math.random() * 3000
+    );
+    return () => clearTimeout(timer);
+  }, [active, revealed]);
+
+  return revealed;
+}
+
+function ShimmerCell({ resolved, index }: { resolved: boolean; index: number }) {
+  return (
+    <div
+      className={`relative aspect-square overflow-hidden rounded-lg transition-all duration-700 ${
+        resolved
+          ? "bg-muted/80 ring-2 ring-primary/50 shadow-[var(--glow-primary)]"
+          : "bg-muted/40"
+      }`}
+      style={{ transitionDelay: `${index * 50}ms` }}
+    >
+      {!resolved && (
+        <div
+          className="absolute inset-0 bg-muted"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 30%, oklch(0.82 var(--accent-chroma, 0.19) var(--accent-hue, 130) / 18%) 50%, transparent 70%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer-sweep 1.8s ease-in-out infinite",
+              animationDelay: `${index * 150}ms`,
+            }}
+          />
+        </div>
+      )}
+      {resolved && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
+          <span className="text-xs font-medium text-muted-foreground/50">
+            {index + 1}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function GenerationRound() {
   const currentRoundIndex = useTrainerStore((s) => s.currentRoundIndex);
@@ -22,6 +79,7 @@ export function GenerationRound() {
   const getSelectedCount = useTrainerStore((s) => s.getSelectedCount);
   const roundCount = useTrainerStore((s) => s.roundCount);
 
+  const revealed = useProgressiveReveal(isGenerating);
   const [isConfirming, setIsConfirming] = useState(false);
 
   const currentGrid = gridResults[currentRoundIndex];
@@ -154,21 +212,31 @@ export function GenerationRound() {
 
       {/* Right: Grid canvas */}
       <div className="flex-1">
-        {/* Loading state — skeleton grid */}
+        {/* Loading state — progressive reveal grid */}
         {isGenerating && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-2.5">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-square animate-pulse rounded-lg bg-muted"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                />
-              ))}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GridLoader2 size={20} />
+                <p className="text-sm text-muted-foreground">
+                  Generating{" "}
+                  <span className="tabular-nums font-semibold text-foreground">
+                    {revealed}
+                  </span>{" "}
+                  of {TOTAL_CELLS}
+                </p>
+              </div>
+              {revealed < TOTAL_CELLS && (
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                  <span className="text-xs text-muted-foreground">Processing</span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <GridLoader2 size={20} />
-              <span>Generating {roundConfig?.label.split(": ")[1]}... usually takes 30-60s</span>
+            <div className="grid grid-cols-3 gap-2.5">
+              {Array.from({ length: TOTAL_CELLS }).map((_, i) => (
+                <ShimmerCell key={i} resolved={i < revealed} index={i} />
+              ))}
             </div>
           </div>
         )}

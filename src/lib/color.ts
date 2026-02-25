@@ -1,6 +1,7 @@
 export const PRIMARY_L = 0.82;
-export const PRIMARY_C = 0.19;
-export const DEFAULT_HUE = 130;
+export const PRIMARY_C = 0.01;
+export const DEFAULT_HUE = 0;
+export const SATURATED_C = 0.19;
 
 /** Convert OKLCH to hex string (e.g. "#8BE83B"). */
 export function oklchToHex(L: number, C: number, h: number): string {

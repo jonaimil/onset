@@ -56,42 +56,20 @@ export async function POST(request: NextRequest) {
     // Upload ZIP to fal.storage
     const zipUrl = await fal.storage.upload(zipFile);
 
-    // Submit training job (blocking — waits for completion)
-    const result = await fal.subscribe("fal-ai/flux-lora-fast-training", {
-      input: {
-        images_data_url: zipUrl,
-        trigger_word: triggerWord,
-        create_masks: true,
-        steps: 1000,
-      },
-      logs: true,
-      onQueueUpdate: (update) => {
-        if (update.status === "IN_PROGRESS") {
-          console.log(
-            "[LoRA Training]",
-            update.logs?.map((l) => l.message).join(", ")
-          );
-        }
-      },
-    });
+    // Submit training job to queue (returns immediately with request_id)
+    const { request_id } = await fal.queue.submit(
+      "fal-ai/flux-lora-fast-training",
+      {
+        input: {
+          images_data_url: zipUrl,
+          trigger_word: triggerWord,
+          create_masks: true,
+          steps: 1000,
+        },
+      }
+    );
 
-    const data = result.data as {
-      diffusers_lora_file?: { url: string };
-      config_file?: { url: string };
-    };
-
-    if (!data.diffusers_lora_file?.url) {
-      return NextResponse.json(
-        { error: "Training completed but no LoRA file returned" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      loraUrl: data.diffusers_lora_file.url,
-      configUrl: data.config_file?.url,
-      triggerWord,
-    });
+    return NextResponse.json({ requestId: request_id });
   } catch (error) {
     console.error("[Train API Error]", error);
     return NextResponse.json(

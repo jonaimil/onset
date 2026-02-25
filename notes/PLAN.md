@@ -1,37 +1,24 @@
-# Project Plan
+# Plan
 
-## Goals
-Build a web app that bootstraps a LoRA training dataset from a single face image, then trains a face-only LoRA via fal.ai. Iterative human-in-the-loop: AI generates, user eliminates bad outputs, face locks in tighter each round.
+## Vision
+Onset: LoRA face trainer that bootstraps a training dataset from a single face image, then trains a LoRA model. Eventually a multi-workflow creative tool.
 
-## Scope
-### In Scope
-- Single face image upload
-- 4 or 6-round generation (user-selectable)
-- Resolution picker (2K or 4K, with cost transparency)
-- Elimination-based curation (all selected by default)
-- LoRA training via fal.ai
-- Profile system for saving trained LoRAs
-- Dark mode UI
-- User API key settings (localStorage, with server key fallback)
-- Cost estimate display on upload step
-- "How it works" explainer dialog
-- Mock/design mode (`?mock=true`)
+## Workflow 1: LoRA Training (Current)
+- [x] Upload single face image
+- [x] Generate 4-6 rounds of face variations via NanoBanana
+- [x] User curates images (select/deselect per round)
+- [x] Final review of full dataset
+- [x] Configure training (profile name, trigger word)
+- [x] Submit training job to fal.ai
+- [x] Save trained LoRA to profiles
+- [x] Mock mode for design iteration
 
-### Out of Scope (V1)
-- Multi-character support
-- Caption review/editing
-- Intelligence layer (LLM analyzing selections)
-- NSFW support
-- Auto image enhancement/preprocessing
-- Vercel deployment optimization (queue+poll)
+## Upcoming
+- [ ] In-app prompting page (replace external "Test LoRA" link)
+- [ ] Deployment: queue+poll for training route (Vercel 60s timeout)
+- [ ] Profile management improvements (edit, rename)
 
-## Phases
-- [x] Phase A: Scaffolding
-- [x] Phase B: Upload step
-- [x] Phase C: Generation + cropping (4 rounds)
-- [x] Phase D: Final review
-- [x] Phase E: Training + profiles
-- [x] Phase F: Bug fixes (training flow, Round 4, error display)
-- [x] Phase G: API key settings + wizard gating + mock mode + cost/info UX
-- [ ] Phase H: UI design polish
-- [ ] Phase I: Full end-to-end testing + GitHub push
+## Scope — Out
+- Multi-face training (one face per workflow)
+- Non-face LoRA training (style, object)
+- Self-hosted training (fal.ai only for now)

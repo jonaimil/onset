@@ -72,7 +72,7 @@ export function FinalReview() {
           <h3 className="text-sm font-medium text-muted-foreground">
             {config.label} ({images.length} images)
           </h3>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
+          <div className="grid grid-cols-4 gap-2.5">
             {images.map((image) => (
               <ImageCell
                 key={image.id}

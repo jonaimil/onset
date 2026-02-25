@@ -92,8 +92,8 @@ export function UploadStep() {
               : "border-muted-foreground/25 hover:border-muted-foreground/50"
           }`}
         >
-          <div className="mb-4 rounded-full bg-muted p-4">
-            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+          <div className="mb-4 rounded-full bg-primary/10 p-4">
+            <ImageIcon className="h-8 w-8 text-primary" />
           </div>
           <p className="text-sm font-medium">
             Drop an image here, or click to browse
