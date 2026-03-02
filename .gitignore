@@ -36,6 +36,9 @@ yarn-error.log*
 # design lab temp files
 .claude-design/
 
+# ai working memory
+/notebook
+
 # vercel
 .vercel
 

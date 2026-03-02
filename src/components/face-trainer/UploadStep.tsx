@@ -75,9 +75,9 @@ export function UploadStep() {
             <HowItWorksDialog />
           </h1>
           <p className="text-muted-foreground">
-            Upload a clear, front-facing photo of the face you want to train.
-            The app will generate variations across multiple rounds to build
-            your training dataset.
+            One photo is all you need. Onset generates a complete training
+            dataset — expressions, angles, outfits — from a single reference
+            image.
           </p>
         </div>
 
